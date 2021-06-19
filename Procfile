@@ -1,1 +1,1 @@
-worker: python3 bot_ravsh.py
+bot: python3 bot_ravsh.py
