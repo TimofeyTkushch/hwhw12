@@ -27,6 +27,25 @@ dct_type = {'h':'Высота',
             's':'Автономное сохранение холода', 
             'v':'Общий объем',
             'w':'Мощность замораживания'}
+bot = Bot(token=TOKEN)
+dp = Dispatcher(bot)
+keyboard = InlineKeyboardMarkup()
+b1 = InlineKeyboardButton('Производитель', callback_data='Cp')
+b21 = InlineKeyboardButton('Высота', callback_data='Ch')
+b22 = InlineKeyboardButton('Автономное сохранение холода', callback_data='Cs')
+b31 = InlineKeyboardButton('Общий объем', callback_data='Cv')
+b32 = InlineKeyboardButton('Мощность замораживания', callback_data='Cw')
+b4 = InlineKeyboardButton('Построить матрицу корреляций', callback_data='corr')
+b5 = InlineKeyboardButton('Посчитать статистики для цены и построить boxplot', callback_data='stat')
+keyboard.add(b1)
+keyboard.row(b21, b22)
+keyboard.row(b31, b32)
+keyboard.add(b4)
+keyboard.add(b5)
+@dp.message_handler(commands=['start'])
+async def welcome(msg: types.Message):
+    await msg.reply('Привет! Я холодильникбот, эксперт по холодильникам. Вы можете выбрать критерий разбиения данных и я дам аналитику по ценам:',
+                    reply_markup=keyboard)
 all=[]
 for i in range(20):
   request=get('https://tehnobt.ru/catalog/krupnaya_bytovaya_tekhnika/kholodilniki_i_morozilniki/?PAGEN_4={0}'.format(i+1))
@@ -68,24 +87,9 @@ al = al.dropna()
 for x in ['Автономное сохранение холода', 'Высота', 'Общий объем', 'Мощность замораживания']:
   al[x] = al[x].apply(dropndg)
 data = al
-bot = Bot(token=TOKEN)
-dp = Dispatcher(bot)
-keyboard = InlineKeyboardMarkup()
-b1 = InlineKeyboardButton('Производитель', callback_data='Cp')
-b21 = InlineKeyboardButton('Высота', callback_data='Ch')
-b22 = InlineKeyboardButton('Автономное сохранение холода', callback_data='Cs')
-b31 = InlineKeyboardButton('Общий объем', callback_data='Cv')
-b32 = InlineKeyboardButton('Мощность замораживания', callback_data='Cw')
-b4 = InlineKeyboardButton('Построить матрицу корреляций', callback_data='corr')
-b5 = InlineKeyboardButton('Посчитать статистики для цены и построить boxplot', callback_data='stat')
 pcount = {}
 for x in data['Производитель'].unique():
     pcount[x] = (data['Производитель'] == x).sum()
-keyboard.add(b1)
-keyboard.row(b21, b22)
-keyboard.row(b31, b32)
-keyboard.add(b4)
-keyboard.add(b5)
 @dp.message_handler(commands=['start'])
 async def welcome(msg: types.Message):
     await msg.reply('Привет! Я холодильникбот, эксперт по холодильникам. Вы можете выбрать критерий разбиения данных и я дам аналитику по ценам:',
