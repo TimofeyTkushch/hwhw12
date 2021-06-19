@@ -4,4 +4,4 @@ pandas
 matplotlib
 numpy
 requests
-bs4
+beautifulsoup4
