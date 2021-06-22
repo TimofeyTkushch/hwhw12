@@ -27,27 +27,8 @@ dct_type = {'h':'Высота',
             's':'Автономное сохранение холода', 
             'v':'Общий объем',
             'w':'Мощность замораживания'}
-bot = Bot(token=TOKEN)
-dp = Dispatcher(bot)
-keyboard = InlineKeyboardMarkup()
-b1 = InlineKeyboardButton('Производитель', callback_data='Cp')
-b21 = InlineKeyboardButton('Высота', callback_data='Ch')
-b22 = InlineKeyboardButton('Автономное сохранение холода', callback_data='Cs')
-b31 = InlineKeyboardButton('Общий объем', callback_data='Cv')
-b32 = InlineKeyboardButton('Мощность замораживания', callback_data='Cw')
-b4 = InlineKeyboardButton('Построить матрицу корреляций', callback_data='corr')
-b5 = InlineKeyboardButton('Посчитать статистики для цены и построить boxplot', callback_data='stat')
-keyboard.add(b1)
-keyboard.row(b21, b22)
-keyboard.row(b31, b32)
-keyboard.add(b4)
-keyboard.add(b5)
-@dp.message_handler(commands=['start'])
-async def welcome(msg: types.Message):
-    await msg.reply('Привет! Я холодильникбот, эксперт по холодильникам. Вы можете выбрать критерий разбиения данных и я дам аналитику по ценам:',
-                    reply_markup=keyboard)
 all=[]
-for i in range(20):
+for i in range(1):
   request=get('https://tehnobt.ru/catalog/krupnaya_bytovaya_tekhnika/kholodilniki_i_morozilniki/?PAGEN_4={0}'.format(i+1))
   html=BeautifulSoup(request.text,'lxml')
   html=html.find('div',class_='items productList')
@@ -58,6 +39,7 @@ for i in range(20):
     name=name.text
     price=obj.find('a',class_='price').text
     all.append([name,href,price]+[np.nan for j in range(23)])
+    
 first=BeautifulSoup(get('https://tehnobt.ru/catalog/krupnaya_bytovaya_tekhnika/kholodilniki_i_morozilniki/kholodilniki_side_by_side/kholodilnik_hiberg_rfq_490dx_nfgw.html').text,'lxml')
 table=first.find('table',class_='stats').find_all('tr')[1:]
 stats=[]
@@ -77,19 +59,38 @@ for j in range(len(all)):
       if name in stats:
         index=stats.index(name)+3
         all[j][index]=t.find_all('td')[1].text
-al=pd.DataFrame(all,columns=['Название','Ссылка','Цена']+[x for x in stats])
-for col in al.columns[4:]:
-  al[col]=al[col].apply(torus)
-al['Цена']=al['Цена'].apply(lambda x:x.replace('\t','').strip())
+Al=pd.DataFrame(all,columns=['Название','Ссылка','Цена']+[x for x in stats])
+for col in Al.columns[4:]:
+  Al[col]=Al[col].apply(torus)
+Al['Цена']=Al['Цена'].apply(lambda x:x.replace('\t','').strip())
+al = pd.DataFrame(index=Al.index)
+for col in Al.columns:
+  al[torus(col)] = Al[col]
 al = al[['Цена', 'Производитель', 'Автономное сохранение холода', 'Высота', 'Общий объем', 'Мощность замораживания']]
 al['Цена'] = al['Цена'].apply(lambda x:int(''.join(x.split('руб')[0].split())))
 al = al.dropna()
 for x in ['Автономное сохранение холода', 'Высота', 'Общий объем', 'Мощность замораживания']:
   al[x] = al[x].apply(dropndg)
+al = pd.read_csv('data.csv')
 data = al
+bot = Bot(token=TOKEN)
+dp = Dispatcher(bot)
+keyboard = InlineKeyboardMarkup()
+b1 = InlineKeyboardButton('Производитель', callback_data='Cp')
+b21 = InlineKeyboardButton('Высота', callback_data='Ch')
+b22 = InlineKeyboardButton('Автономное сохранение холода', callback_data='Cs')
+b31 = InlineKeyboardButton('Общий объем', callback_data='Cv')
+b32 = InlineKeyboardButton('Мощность замораживания', callback_data='Cw')
+b4 = InlineKeyboardButton('Построить матрицу корреляций', callback_data='corr')
+b5 = InlineKeyboardButton('Посчитать статистики для цены и построить boxplot', callback_data='stat')
 pcount = {}
 for x in data['Производитель'].unique():
     pcount[x] = (data['Производитель'] == x).sum()
+keyboard.add(b1)
+keyboard.row(b21, b22)
+keyboard.row(b31, b32)
+keyboard.add(b4)
+keyboard.add(b5)
 @dp.message_handler(commands=['start'])
 async def welcome(msg: types.Message):
     await msg.reply('Привет! Я холодильникбот, эксперт по холодильникам. Вы можете выбрать критерий разбиения данных и я дам аналитику по ценам:',
